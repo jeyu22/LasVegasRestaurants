@@ -1,4 +1,4 @@
-# STAT231F19-GroupC
+# Final Project for Data Science - Amherst College
 Group Project for Jessica Yu and Kenny Chen
 
 Our project involved downloading extremely large datsets from the yelp data set challenge.
