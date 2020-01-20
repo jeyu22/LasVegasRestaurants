@@ -1,0 +1,129 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(mdsr)
+library(rjson)
+library(jsonlite)
+library(fuzzyjoin)
+library(tidyverse)
+library(lubridate)
+library(dplyr)
+library(stringdist)
+library(reprex)
+knitr::opts_chunk$set(echo = TRUE)
+stringsAsFactors = F
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r, cache = T}
+businesses <- readRDS("lasVegasExcerpt.Rds")
+```
+
+```{r}
+index <- grep("Restaurants", businesses$categories)
+
+business <- businesses[index,]
+
+
+business %>%
+  group_by(city) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n))
+
+
+las_vegas_business <- business %>%
+  filter(city == "Las Vegas") 
+  
+
+```
+
+```{r inspection data}
+
+inspectionsread <- read_csv("Restaurant_Inspections_Open_Data.csv")
+### for those restaurants without inspections? can we predict inspections based off yelp reviews?? 
+
+```
+
+
+```{r cleaning}
+
+lasvegasbusiness <- las_vegas_business %>%
+  filter(is_open == 1) %>%
+  mutate(name = tolower(name),
+         name = gsub("[&\\+]","and", name),
+         name = gsub("[,-\\/]"," ", name),
+         name = gsub("['\\.\\(\\)\\|]","", name), 
+         address = tolower(address),
+         address = gsub("[,\\.]","",address)) %>%
+  select(name, address, latitude, longitude)
+
+
+inspections <- inspectionsread %>%
+  mutate(Restaurant_Name = tolower(Restaurant_Name),
+         Restaurant_Name = gsub("[&\\+]","and",Restaurant_Name),
+         Restaurant_Name = gsub("[,-\\/]"," ", Restaurant_Name),
+         Restaurant_Name = gsub("['\\.\\(\\)]", "", Restaurant_Name),
+         Restaurant_Name = gsub("@","at", Restaurant_Name),
+         Address = tolower(Address),
+         Address = gsub("-"," ", Address)) %>%
+  separate(Location_1, c("iLatitude","iLongitude"),sep=",") %>%
+  mutate(iLatitude = as.numeric(gsub("\\(","", iLatitude)),
+         iLongitude = as.numeric(gsub("\\)","", iLongitude)),
+         iLongitude = if(iLongitude > 0){ iLongitude*(-1)}) %>%
+  select(Restaurant_Name, Address,iLatitude, iLongitude, Inspection_Time, Inspection_Grade) 
+
+uniqueBusiness <- unique(lasvegasbusiness[c("name","address", "latitude","longitude")])
+
+uniqueInspections <- inspections %>%
+  group_by(Restaurant_Name, Address) %>%
+  arrange(desc(Inspection_Time)) %>%
+  top_n(1) %>%
+    select(Restaurant_Name, Address, iLatitude, iLongitude)
+
+```
+
+```{r functions}
+match_fun_stringdist <- function(v1, v2) {
+  dists <- stringdist(v1, v2, method = "osa")
+  ret <- dplyr::data_frame(include = (dists <= 10))
+  ret[["distance_col"]] <- dists
+  ret
+}
+
+match_location <- function(l1,l2) {
+   diff <- abs(l1 - l2) 
+  ret <- dplyr::data_frame(include = (diff < 0.0005))
+  ret[["diff"]] <- diff
+  ret
+}
+```
+
+```{r, cache = T}
+matches <- fuzzy_inner_join(uniqueBusiness, uniqueInspections,
+                by = list(x = c("name", "address", "latitude", "longitude"), y = c("Restaurant_Name", "Address", "iLatitude", "iLongitude")), 
+                match_fun = list(match_fun_stringdist, match_fun_stringdist, match_location, match_location))
+
+
+
+matches
+
+```
+
+
+```{r}
+without_matches <- fuzzy_anti_join(uniqueBusiness, uniqueInspections,
+                by = list(x = c("name", "address", "latitude", "longitude"), y = c("Restaurant_Name", "Address", "iLatitude", "iLongitude")), 
+                match_fun = list(match_fun_stringdist, match_fun_stringdist, match_location, match_location))
+
+without_matches
+```
+
+

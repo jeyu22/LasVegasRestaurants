@@ -1,0 +1,39 @@
+---
+title: "Test of reading JSON files"
+author: "Nicholas Horton (nhorton@amherst.edu)"
+date: "November 3, 2019"
+output: 
+  pdf_document:
+    fig_height: 3
+    fig_width: 5
+  html_document:
+    fig_height: 3
+    fig_width: 5
+  word_document:
+    fig_height: 3
+    fig_width: 5
+---
+
+```{r, setup, include=FALSE}
+require(mdsr)   # Load additional packages here
+library(rjson)
+knitr::opts_chunk$set(
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+```
+
+## Read a small chunk
+
+```{r}
+fromJSON(file = "review.json.excerpt") 
+
+fromJSON(file = "business.json.excerpt") 
+
+fromJSON(file = "checkin.json.excerpt") 
+
+fromJSON(file = "tip.json.excerpt") 
+
+fromJSON(file = "user.json.excerpt") 
+
+```
+

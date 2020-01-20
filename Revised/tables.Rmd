@@ -1,0 +1,89 @@
+---
+title: "tables"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyverse)
+library(stringr)
+library(formattable)
+```
+
+
+```{r}
+lvrestaurant <-readRDS("lasVegasExcerpt.Rds")
+lvinspection <- read.csv("Restaurant_Inspections_Open_Data.csv")
+
+##read..review.json.excerpt somehow
+```
+
+```{r}
+
+## cleaning!
+lvinspection <- lvinspection %>%
+  separate(Location_1, c("latitude","longitude"),sep=",")
+
+lvinspection$latitude <- 
+  as.numeric(gsub("\\(", "", lvinspection$latitude))
+
+lvinspection$longitude <- 
+  as.numeric(gsub("\\)", "", lvinspection$longitude))
+
+lvinspection <-lvinspection %>%
+  mutate_at(vars(latitude,longitude), funs(round(.,3)))
+
+lvrestaurant <-lvrestaurant %>%
+  select(name,address,postal_code,latitude,longitude)
+
+lvinspection <- lvinspection %>%
+  select(Restaurant_Name,Location_Name,Address,Zip,
+         latitude,longitude,Inspection_Date)%>%
+  mutate(longitude=longitude*(-1))
+
+
+```
+
+```{r}
+
+## finding restaurants..
+
+lvrestaurant <-lvrestaurant %>%
+    filter(name=="Pop Drinks" |
+           address=="4300 Meadows Lane, #5527" |
+           name=="Pressed For Juice" |
+           name=="Takopa"|
+             name=="Island Pacific Seafood Market" |
+             name=="Cleaver -  Butchered Meats, Seafood & Cocktails"|
+             address=="4810 W Desert Inn Rd"|
+             name=="Island Style 2")%>%
+  add_row(name="NA",address="",postal_code="",latitude="",longitude="")%>%
+  arrange(desc(address))
+
+lvinspection <- lvinspection %>%
+  filter(Restaurant_Name==	"POP DRINKS" | 
+           Restaurant_Name=="COFFEE BEAN & TEA LEAF SNACK BAR @ MEADOWS MALL" |
+           Address=="6145 S FORT APACHE" |
+           Restaurant_Name=="TAKOPA" |
+           Restaurant_Name =="ISLAND PACIFIC SEAFOOD RESTAURANT"|
+           Restaurant_Name =="CLEAVER RESTAURANT"|
+           Restaurant_Name=="SUBWAY #26754"|
+           Restaurant_Name=="ISLAND STYLE @ KOREA TOWN")%>%
+  arrange(desc(Address))
+  
+  
+lvinspection 
+
+lvrestaurant
+
+x[1,]<-cbind(lvinspection[6,],lvrestaurant[6,])
+
+x[2,]<-cbind(lvinspection[1,],lvrestaurant[10,])
+
+##x[3,]<-cbind(lvinspection[2,],lvrestaurant[2,])
+#x[4,]<-cbind(lvinspection[4,],lvrestaurant[4,])
+
+x
+
+```

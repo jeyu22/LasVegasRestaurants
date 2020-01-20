@@ -1,0 +1,13 @@
+name: Final
+title: Final
+username:
+account: stat231-groupc
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1563631
+bundleId: 2644036
+url: https://stat231-groupc.shinyapps.io/Final/
+when: 1575561207.98563
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: cleanedMatches.csv|Data Cleaning.Rmd|matches_reviews.Rds|matches.csv|Restaurant_Inspections_Open_Data.csv|Sentiment Analysis.Rmd|Stat231 Final Presentation _ Group C.pdf|STAT231 Group C_Handout.pdf|vegasRestaurants.Rds

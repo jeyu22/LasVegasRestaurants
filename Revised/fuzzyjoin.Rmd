@@ -1,0 +1,121 @@
+---
+title: "whatthehellisfuzzyjoin"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyverse)
+library(stringr)
+library(formattable)
+library(fuzzyjoin)
+library(stringdist)
+```
+
+
+```{r}
+lvrestaurant <-readRDS("lasVegasExcerpt.Rds")
+lvinspection <- read.csv("Restaurant_Inspections_Open_Data.csv")
+lvinspection1 <- lvinspection %>%
+  separate(Location_1, c("latitude","longitude"),sep=",")
+
+  
+  
+  lvinspection1 <- lvinspection1 %>%
+    mutate(inspection_latitude = as.numeric(str_replace(lvinspection1$latitude, "\\(","")),
+           inspection_longitude = as.numeric(str_replace(lvinspection1$longitude, "\\)","")))
+  
+  lvinspection1
+  
+
+lvinspection2 <-lvinspection1 %>%
+  mutate_at(vars(inspection_latitude,inspection_longitude), funs(round(.,3)))
+
+lvrestaurant1 <-lvrestaurant %>%
+  select(business_id, name,address,postal_code,latitude,longitude)
+
+lvinspection3 <- lvinspection2 %>%
+  select(Restaurant_Name,Location_Name,Address,Zip,
+        inspection_latitude, inspection_longitude,Inspection_Date)%>%
+  mutate(inspection_longitude=inspection_longitude*(-1))
+
+
+```
+
+```{r}
+
+## finding restaurants..
+
+lvrestaurant2 <-lvrestaurant1 %>%
+    filter(name=="Pop Drinks" |
+           address=="4300 Meadows Lane, #5527" |
+           name=="Pressed For Juice" |
+           name=="Takopa"|
+             name=="Island Pacific Seafood Market" |
+             name=="Cleaver -  Butchered Meats, Seafood & Cocktails"|
+             address=="4810 W Desert Inn Rd"|
+             name=="Island Style 2")
+
+lvinspection4 <- lvinspection3 %>%
+  filter(Restaurant_Name==	"POP DRINKS" | 
+           Restaurant_Name=="COFFEE BEAN & TEA LEAF SNACK BAR @ MEADOWS MALL" |
+           Address=="6145 S FORT APACHE" |
+           Restaurant_Name=="TAKOPA" |
+           Restaurant_Name =="ISLAND PACIFIC SEAFOOD RESTAURANT"|
+           Restaurant_Name =="CLEAVER RESTAURANT"|
+           Restaurant_Name=="SUBWAY #26754"|
+           Restaurant_Name=="ISLAND STYLE @ KOREA TOWN")
+  
+
+lvinspection4
+lvrestaurant2
+
+lvrestaurant3 <- lvrestaurant2[-4,]
+
+lvinspection5 <- lvinspection4[c(-7,-9),]
+
+
+
+lvinspection6 <- lvinspection5[c(8,4,9,1,7,2,3,5), ]
+
+
+
+
+both <- cbind(lvrestaurant3, lvinspection6)
+
+both
+```
+
+```{r}
+
+## NEW CODE
+
+# making the variables in two tables match
+lvinspection4<-lvinspection4%>%
+  rename(address=Address)
+
+lvinspection4<-lvinspection4%>%
+  rename(latitude=inspection_latitude,longitude=inspection_longitude)
+  
+```
+
+```{r}
+
+#new stuff
+
+fuzzy_left_join(lvrestaurant2,lvinspection4,match_fun,by=name) ## don't know how to set this up
+
+stringdist_full_join(lvrestaurant2, lvinspection4, by = c("name","latitude"),ignore_case=TRUE, distance_col = "distance")
+
+regex_left_join(lvrestaurant2, lvinspection4, by = c("address","name"), ignore_case = TRUE)
+
+#most successful one 7/9 matches
+stringdist_join(lvrestaurant2, lvinspection4, by = NULL, method = "soundex",
+ mode = "left",
+  distance_col = "dist",ignore_case=TRUE)
+
+
+geo_left_join(lvrestaurant2, lvinspection4,max_dist=1,distance_col="dist")
+
+```
